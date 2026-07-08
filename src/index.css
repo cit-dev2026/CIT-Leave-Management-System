@@ -1,0 +1,70 @@
+@import url('https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=Source+Sans+3:wght@400;600;700&display=swap');
+@import 'tailwindcss';
+
+:root {
+  --font-sans: 'Source Sans 3', 'Segoe UI', sans-serif;
+  --font-display: 'Space Grotesk', 'Segoe UI', sans-serif;
+  --bg-primary: #f5f7fa;
+  --bg-elevated: #ffffff;
+  --bg-accent: #0f4c5c;
+  --text-primary: #1c2a37;
+  --text-secondary: #5d6b78;
+  --border-primary: #d7dee5;
+  --shadow-soft: 0 10px 30px rgba(28, 42, 55, 0.08);
+}
+
+.dark {
+  --bg-primary: #0f1720;
+  --bg-elevated: #16212d;
+  --bg-accent: #0e7490;
+  --text-primary: #f4f7fb;
+  --text-secondary: #b6c2cf;
+  --border-primary: #2a3a4b;
+  --shadow-soft: 0 10px 30px rgba(7, 11, 15, 0.45);
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html,
+body,
+#root {
+  min-height: 100%;
+}
+
+body {
+  margin: 0;
+  font-family: var(--font-sans);
+  color: var(--text-primary);
+  background:
+    radial-gradient(circle at 8% 10%, rgba(15, 76, 92, 0.15), transparent 35%),
+    radial-gradient(circle at 90% 90%, rgba(110, 231, 183, 0.1), transparent 30%),
+    var(--bg-primary);
+  text-rendering: optimizeLegibility;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+h1,
+h2,
+h3,
+h4,
+h5,
+h6 {
+  margin: 0;
+  font-family: var(--font-display);
+  color: var(--text-primary);
+}
+
+a {
+  color: inherit;
+  text-decoration: none;
+}
+
+.surface-card {
+  border: 1px solid var(--border-primary);
+  border-radius: 16px;
+  background: var(--bg-elevated);
+  box-shadow: var(--shadow-soft);
+}
