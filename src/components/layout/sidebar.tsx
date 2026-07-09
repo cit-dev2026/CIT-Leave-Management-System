@@ -1,20 +1,14 @@
-import { Building2 } from 'lucide-react'
 import { NavLink } from 'react-router-dom'
 
+import { Logo } from '@/components/ui/logo'
 import { MAIN_NAVIGATION } from '@/constants/navigation'
 import { cn } from '@/utils/cn'
 
 export function Sidebar() {
   return (
     <aside className="surface-card sticky top-4 h-[calc(100vh-2rem)] w-72 p-5">
-      <div className="mb-6 flex items-center gap-3 border-b border-[var(--border-primary)] pb-4">
-        <div className="rounded-xl bg-[var(--bg-accent)] p-2 text-white">
-          <Building2 className="h-5 w-5" />
-        </div>
-        <div>
-          <p className="text-xs uppercase tracking-wider text-[var(--text-secondary)]">Enterprise</p>
-          <h1 className="text-lg font-bold">CIT HRMS</h1>
-        </div>
+      <div className="mb-6 border-b border-[var(--border-primary)] pb-4">
+        <Logo size="md" showText={true} />
       </div>
 
       <nav className="flex flex-col gap-1">
