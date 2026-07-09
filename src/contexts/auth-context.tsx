@@ -34,6 +34,9 @@ type AuthError = {
 }
 
 type AuthContextType = AuthState & {
+  // Unified loading flag for route guards/UI
+  loading: boolean
+
   // Methods
   signOut: () => Promise<void>
   refreshSession: () => Promise<void>
@@ -295,6 +298,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const value: AuthContextType = {
     ...state,
+    loading: state.isInitializing || state.isLoading,
     signOut,
     refreshSession,
     getCurrentUser,
