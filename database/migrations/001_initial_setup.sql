@@ -3,20 +3,26 @@
 
 create extension if not exists "pgcrypto";
 
-create type public.app_role as enum (
-  'Super Administrator',
-  'Administrator',
-  'HR Manager',
-  'HR Officer',
-  'Department Manager',
-  'Supervisor',
-  'Employee',
-  'Guest'
-);
+do $$
+begin
+  if not exists (
+    select 1
+    from pg_type t
+    join pg_namespace n on n.oid = t.typnamespace
+    where t.typname = 'app_role'
+      and n.nspname = 'public'
+  ) then
+    create type public.app_role as enum (
+      'CompanyOwner',
+      'HROfficer'
+    );
+  end if;
+end
+$$;
 
 create table if not exists public.user_profiles (
   user_id uuid primary key references auth.users (id) on delete cascade,
-  role public.app_role not null default 'Guest',
+  role public.app_role not null default 'CompanyOwner',
   employee_id uuid null,
   created_at timestamptz not null default now(),
   updated_at timestamptz not null default now()
@@ -50,7 +56,7 @@ stable
 security definer
 set search_path = public
 as $$
-  select coalesce((select role from public.user_profiles where user_id = auth.uid()), 'Guest'::public.app_role);
+  select coalesce((select role from public.user_profiles where user_id = auth.uid()), 'CompanyOwner'::public.app_role);
 $$;
 
 create or replace function public.is_hr_privileged()
@@ -60,7 +66,7 @@ stable
 security definer
 set search_path = public
 as $$
-  select public.current_user_role() in ('Super Administrator', 'Administrator', 'HR Manager', 'HR Officer');
+  select public.current_user_role() in ('CompanyOwner', 'HROfficer');
 $$;
 
 create or replace function public.log_audit_event()

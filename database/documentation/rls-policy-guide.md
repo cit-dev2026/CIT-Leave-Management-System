@@ -4,14 +4,8 @@
 Supabase Auth issues JWTs. Database policies evaluate claims via `auth.uid()` and role resolution from `public.user_profiles`.
 
 ## Role Definitions
-- Super Administrator
-- Administrator
-- HR Manager
-- HR Officer
-- Department Manager
-- Supervisor
-- Employee
-- Guest
+- CompanyOwner
+- HROfficer
 
 ## Authorization Functions
 - `public.current_user_role()`: resolves effective app role.

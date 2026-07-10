@@ -6,15 +6,37 @@ export type EmployeeListItem = {
   employeeNumber: string
   fullName: string
   email: string
+  companyId: string
+  companyName: string
   status: string
   employmentType: string
   hireDate: string
 }
 
+export type CompanyOption = {
+  id: string
+  name: string
+}
+
+type EmployeeWithCompanyRow = {
+  id: string
+  employee_number: string
+  first_name: string
+  last_name: string
+  email: string
+  company_id: string
+  status: string
+  employment_type: string | null
+  hire_date: string
+  companies: {
+    name: string
+  } | null
+}
+
 export async function getEmployees(filters: EmployeeFilterSchema) {
   let query = supabase
     .from('employees')
-    .select('id, employee_number, first_name, last_name, email, status, employment_type, hire_date')
+    .select('id, employee_number, first_name, last_name, email, company_id, status, employment_type, hire_date, companies(name)')
     .is('deleted_at', null)
 
   if (filters.search) {
@@ -31,21 +53,64 @@ export async function getEmployees(filters: EmployeeFilterSchema) {
     query = query.in('employment_type', filters.employmentTypes)
   }
 
+  if (filters.companyIds.length > 0) {
+    query = query.in('company_id', filters.companyIds)
+  }
+
   const { data, error } = await query.order('created_at', { ascending: false }).limit(200)
 
   if (error) {
     throw error
   }
 
-  return (data ?? []).map<EmployeeListItem>((employee) => ({
+  const employeeRows = (data ?? []) as unknown as EmployeeWithCompanyRow[]
+
+  return employeeRows.map<EmployeeListItem>((employee) => ({
     id: employee.id,
     employeeNumber: employee.employee_number,
     fullName: `${employee.first_name} ${employee.last_name}`,
     email: employee.email,
+    companyId: employee.company_id,
+    companyName: employee.companies?.name ?? 'Unassigned',
     status: employee.status,
     employmentType: employee.employment_type ?? 'N/A',
     hireDate: employee.hire_date,
   }))
+}
+
+export async function getActiveCompanies() {
+  const { data, error } = await supabase
+    .from('companies')
+    .select('id, name')
+    .eq('is_active', true)
+    .is('deleted_at', null)
+    .order('name', { ascending: true })
+
+  if (error) {
+    throw error
+  }
+
+  return (data ?? []) as CompanyOption[]
+}
+
+export async function updateEmployeeCompany(
+  employeeId: string,
+  companyId: string,
+  actorId: string | null,
+) {
+  const { error } = await supabase
+    .from('employees')
+    .update({
+      company_id: companyId,
+      updated_by: actorId,
+      updated_at: new Date().toISOString(),
+    })
+    .eq('id', employeeId)
+    .is('deleted_at', null)
+
+  if (error) {
+    throw error
+  }
 }
 
 export async function softDeleteEmployees(employeeIds: string[], actorId: string | null) {

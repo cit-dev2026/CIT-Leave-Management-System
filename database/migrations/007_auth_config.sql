@@ -5,30 +5,42 @@
 -- Purpose: 
 --   - Create user_profiles table linking auth.users to application context
 --   - Enable RLS for auth infrastructure tables
---   - Establish HR_ADMIN role-based access control
+--   - Establish CompanyOwner/HROfficer role-based access control
 --   - Enforce HR users only (no employee access in V1)
 
 -- ============================================================================
 -- 1. CREATE USER_ROLE ENUM
 -- ============================================================================
 -- Represents available user roles in the system
--- V1: HR_ADMIN only (future versions will add more roles)
-create type public.user_role as enum ('HR_ADMIN');
+-- V1: CompanyOwner and HROfficer only
+do $$
+begin
+  if not exists (
+    select 1
+    from pg_type t
+    join pg_namespace n on n.oid = t.typnamespace
+    where t.typname = 'user_role'
+      and n.nspname = 'public'
+  ) then
+    create type public.user_role as enum ('CompanyOwner', 'HROfficer');
+  end if;
+end
+$$;
 
 -- ============================================================================
 -- 2. CREATE USER_PROFILES TABLE
 -- ============================================================================
 -- Links Supabase auth.users to application-specific user data
--- All users in this table are HR administrators in V1
+-- Users in this table are CompanyOwner or HROfficer in V1
 -- References:
 --   - user_id: Foreign key to auth.users (Supabase managed)
---   - role: User role in the system (HR_ADMIN only in V1)
+--   - role: User role in the system (CompanyOwner/HROfficer only in V1)
 --   - is_active: Account activation status
 --   - employee_id: Optional link to employee record (for employee HR access later)
 create table public.user_profiles (
   id bigserial primary key,
   user_id uuid not null unique references auth.users(id) on delete cascade,
-  role public.user_role not null default 'HR_ADMIN',
+  role public.user_role not null default 'CompanyOwner',
   is_active boolean not null default false,
   full_name text not null,
   phone text,
@@ -47,7 +59,7 @@ create index user_profiles_employee_id_idx on public.user_profiles(employee_id);
 
 -- Add table comment for documentation
 comment on table public.user_profiles is 
-  'Links Supabase auth.users to application context. HR_ADMIN only in V1.';
+  'Links Supabase auth.users to application context. CompanyOwner/HROfficer in V1.';
 
 comment on column public.user_profiles.is_active is 
   'When false, user cannot login even with valid credentials';
@@ -65,13 +77,13 @@ alter table public.user_profiles enable row level security;
 -- 4. ROW LEVEL SECURITY POLICIES FOR USER_PROFILES
 -- ============================================================================
 
--- Policy 1: HR Admins can view their own profile
+-- Policy 1: Users can view their own profile
 create policy "users_can_view_own_profile"
   on public.user_profiles
   for select
   using (auth.uid() = user_id);
 
--- Policy 2: HR Admins cannot update their own role
+-- Policy 2: Users cannot update their own role
 -- (Role changes must be done by system administrator via admin panel)
 create policy "users_cannot_update_own_role"
   on public.user_profiles
@@ -85,7 +97,7 @@ create policy "users_cannot_delete_profiles"
   for delete
   using (false); -- Deny all deletes, use is_active flag instead
 
--- Policy 4: Only active HR admins can view all user profiles
+-- Policy 4: Only active CompanyOwner users can view all user profiles
 -- (For admin panel - show list of users)
 create policy "admins_view_all_user_profiles"
   on public.user_profiles
@@ -94,7 +106,7 @@ create policy "admins_view_all_user_profiles"
     exists (
       select 1 from public.user_profiles up
       where up.user_id = auth.uid()
-      and up.role = 'HR_ADMIN'
+      and up.role = 'CompanyOwner'
       and up.is_active = true
     )
   );
@@ -132,9 +144,9 @@ create policy "admins_view_all_user_profiles"
 -- 6. IMPORTANT CONSTRAINTS FOR V1
 -- ============================================================================
 -- 
--- ✓ HR_ADMIN is the ONLY role available in V1
+-- ✓ CompanyOwner and HROfficer are the ONLY roles available in V1
 -- ✓ All user_profiles must have is_active = false initially
--- ✓ HR admin must explicitly activate new user accounts
+-- ✓ CompanyOwner must explicitly activate new user accounts
 -- ✓ Service Role Key is NEVER used in frontend (violates security model)
 -- ✓ User login creates JWT token valid for 1 hour
 -- ✓ Refresh token valid for 7 days (auto-refresh before expiry)

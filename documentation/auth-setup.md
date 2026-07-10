@@ -2,10 +2,10 @@
 
 ## Overview
 
-Sprint 2 Step 1 configures Supabase Authentication for HR-only access to the CIT Leave Management System. This guide covers the Supabase console setup required to enable email/password authentication for HR administrators.
+Sprint 2 Step 1 configures Supabase Authentication for CompanyOwner and HROfficer access to the CIT Leave Management System. This guide covers the Supabase console setup required to enable email/password authentication for authorized company users.
 
 **Key Points:**
-- HR_ADMIN role only (V1 does not support employee access)
+- CompanyOwner and HROfficer roles only (V1 does not support employee access)
 - Email/Password authentication provider
 - 1-hour access tokens with 7-day refresh tokens
 - Email confirmation required before login
@@ -18,7 +18,7 @@ Sprint 2 Step 1 configures Supabase Authentication for HR-only access to the CIT
 ### User Authentication Flow
 
 ```
-1. HR Admin enters email/password on login page
+1. Company user enters email/password on login page
 2. Supabase Auth validates credentials
 3. JWT token issued (1 hour expiry)
 4. Refresh token issued (7 days expiry)
@@ -34,7 +34,7 @@ Sprint 2 Step 1 configures Supabase Authentication for HR-only access to the CIT
 - **Policies:**
   - Users can only view their own profile
   - Users cannot modify their own role
-  - Only active HR admins can view all user profiles
+   - Only active CompanyOwner users can view all user profiles
   - Profiles cannot be deleted (use is_active flag to deactivate)
 
 ---
@@ -96,7 +96,7 @@ Sprint 2 Step 1 configures Supabase Authentication for HR-only access to the CIT
 
 ## User Management
 
-### Creating HR Administrator Accounts
+### Creating Company User Accounts
 
 **Method 1: Supabase Dashboard (Manual)**
 
@@ -105,12 +105,12 @@ Sprint 2 Step 1 configures Supabase Authentication for HR-only access to the CIT
 3. Enter email address and temporary password
 4. User will receive confirmation email
 5. After email confirmation, the user profile will be created via backend process
-6. HR admin must activate account (`is_active = true`) before user can login
+6. CompanyOwner must activate account (`is_active = true`) before user can login
 
 **Method 2: Backend API (Programmatic - Phase 2 Step 3)**
 
 A backend API will be created to:
-1. Accept HR admin email/phone/details
+1. Accept company user email/phone/details and target role
 2. Create user via Supabase Admin API (Service Role Key)
 3. Send confirmation email
 4. Create user_profiles record with `is_active = false`
@@ -118,7 +118,7 @@ A backend API will be created to:
 
 ### User Deactivation
 
-To disable an HR admin account:
+To disable a company user account:
 1. Navigate to **Authentication** → **Users**
 2. Find the user record
 3. In application: Set `user_profiles.is_active = false`
@@ -144,7 +144,7 @@ To fully remove user:
 
 - **Service Role Key in Frontend**: Never expose or use in client-side code
 - **Employee Self-Service**: No employee access in V1
-- **Role Creation**: Only HR_ADMIN role available in V1
+- **Role Creation**: Only CompanyOwner and HROfficer roles available in V1
 - **Password Reset**: Not implemented in V1 (manual reset via admin)
 - **Social Login**: Email/Password only in V1
 
@@ -167,7 +167,7 @@ VITE_SUPABASE_ANON_KEY=eyJhbGciOiJIUzI1NiIs...
 
 ### Manual Testing Checklist
 
-- [ ] Create test HR admin account via Supabase dashboard
+- [ ] Create test company user account via Supabase dashboard
 - [ ] Confirm email from inbox
 - [ ] Activate user profile (`is_active = true`)
 - [ ] Login with email/password
@@ -216,7 +216,7 @@ VITE_AUTH_LOGOUT_URL=https://cit-hrms.example.com/login
 |---------|-------|---------|
 | **JWT Expiry** | 3600 (1 hour) | Access token validity |
 | **Refresh Expiry** | 604800 (7 days) | Refresh token validity |
-| **Provider** | Email/Password | HR admin login method |
+| **Provider** | Email/Password | Company user login method |
 | **Confirm Email** | Enabled | Security - verify email ownership |
 | **Auto Refresh** | Enabled | Auto-refresh tokens on frontend |
 | **Session Persist** | Enabled | Remember user across refreshes |

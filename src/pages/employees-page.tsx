@@ -3,7 +3,12 @@ import { useMemo, useState } from 'react'
 
 import { Button } from '@/components/ui/button'
 import { Card } from '@/components/ui/card'
-import { useEmployees, useSoftDeleteEmployees } from '@/hooks/use-employees'
+import {
+  useActiveCompanies,
+  useEmployees,
+  useSoftDeleteEmployees,
+  useUpdateEmployeeCompany,
+} from '@/hooks/use-employees'
 import { employeeFilterSchema, type EmployeeFilterSchema } from '@/schemas/employee-schema'
 
 const defaultFilters: EmployeeFilterSchema = employeeFilterSchema.parse({
@@ -16,13 +21,17 @@ const defaultFilters: EmployeeFilterSchema = employeeFilterSchema.parse({
 })
 
 export function EmployeesPage() {
-  const [filters] = useState<EmployeeFilterSchema>(defaultFilters)
+  const [filters, setFilters] = useState<EmployeeFilterSchema>(defaultFilters)
   const [selectedIds, setSelectedIds] = useState<string[]>([])
+  const [updatingEmployeeId, setUpdatingEmployeeId] = useState<string | null>(null)
 
   const employeesQuery = useEmployees(filters)
+  const companiesQuery = useActiveCompanies()
   const softDeleteMutation = useSoftDeleteEmployees()
+  const updateEmployeeCompanyMutation = useUpdateEmployeeCompany()
 
   const employeeData = useMemo(() => employeesQuery.data ?? [], [employeesQuery.data])
+  const companies = useMemo(() => companiesQuery.data ?? [], [companiesQuery.data])
 
   const allSelected = employeeData.length > 0 && selectedIds.length === employeeData.length
 
@@ -52,12 +61,38 @@ export function EmployeesPage() {
 
       <Card className="space-y-4">
         <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
-          <input
-            type="search"
-            className="h-10 w-full rounded-xl border border-[var(--border-primary)] bg-transparent px-3 text-sm outline-none lg:max-w-md"
-            placeholder="Global search: employee no, name, email"
-            defaultValue={filters.search}
-          />
+          <div className="flex w-full flex-col gap-2 lg:max-w-3xl lg:flex-row">
+            <input
+              type="search"
+              className="h-10 w-full rounded-xl border border-[var(--border-primary)] bg-transparent px-3 text-sm outline-none"
+              placeholder="Global search: employee no, name, email"
+              value={filters.search}
+              onChange={(event) => {
+                setFilters((previous) => ({
+                  ...previous,
+                  search: event.target.value,
+                }))
+              }}
+            />
+            <select
+              className="h-10 w-full rounded-xl border border-[var(--border-primary)] bg-transparent px-3 text-sm outline-none lg:w-72"
+              value={filters.companyIds[0] ?? ''}
+              onChange={(event) => {
+                const selectedCompanyId = event.target.value
+                setFilters((previous) => ({
+                  ...previous,
+                  companyIds: selectedCompanyId ? [selectedCompanyId] : [],
+                }))
+              }}
+            >
+              <option value="">All companies</option>
+              {companies.map((company) => (
+                <option key={company.id} value={company.id}>
+                  {company.name}
+                </option>
+              ))}
+            </select>
+          </div>
           <div className="flex items-center gap-2 text-xs text-[var(--text-secondary)]">
             <span>{selectedIds.length} selected</span>
             <Button
@@ -97,6 +132,7 @@ export function EmployeesPage() {
                 <th className="px-3 py-2">Employee #</th>
                 <th className="px-3 py-2">Name</th>
                 <th className="px-3 py-2">Email</th>
+                <th className="px-3 py-2">Company</th>
                 <th className="px-3 py-2">Employment Type</th>
                 <th className="px-3 py-2">Status</th>
                 <th className="px-3 py-2">Hire Date</th>
@@ -129,6 +165,42 @@ export function EmployeesPage() {
                     <td className="px-3 py-2 font-semibold">{employee.employeeNumber}</td>
                     <td className="px-3 py-2">{employee.fullName}</td>
                     <td className="px-3 py-2">{employee.email}</td>
+                    <td className="px-3 py-2">
+                      <select
+                        className="h-9 min-w-48 rounded-lg border border-[var(--border-primary)] bg-transparent px-2 text-sm outline-none"
+                        value={employee.companyId}
+                        disabled={
+                          updateEmployeeCompanyMutation.isPending &&
+                          updatingEmployeeId === employee.id
+                        }
+                        onChange={(event) => {
+                          const nextCompanyId = event.target.value
+
+                          if (!nextCompanyId || nextCompanyId === employee.companyId) {
+                            return
+                          }
+
+                          setUpdatingEmployeeId(employee.id)
+
+                          void updateEmployeeCompanyMutation
+                            .mutateAsync({
+                              employeeId: employee.id,
+                              companyId: nextCompanyId,
+                              actorId: null,
+                            })
+                            .finally(() => {
+                              setUpdatingEmployeeId(null)
+                            })
+                        }}
+                      >
+                        {companies.map((company) => (
+                          <option key={`${employee.id}-${company.id}`} value={company.id}>
+                            {company.name}
+                          </option>
+                        ))}
+                      </select>
+                      <p className="mt-1 text-xs text-[var(--text-secondary)]">{employee.companyName}</p>
+                    </td>
                     <td className="px-3 py-2">{employee.employmentType}</td>
                     <td className="px-3 py-2">{employee.status}</td>
                     <td className="px-3 py-2">{employee.hireDate}</td>

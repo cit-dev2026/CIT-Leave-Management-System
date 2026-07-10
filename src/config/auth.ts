@@ -4,7 +4,7 @@
  * 
  * JWT Expiry: 1 hour (3600 seconds) - Access token
  * Refresh Expiry: 7 days (604800 seconds) - Refresh token
- * User Role: HR_ADMIN (only role for V1)
+ * User Roles: CompanyOwner and HROfficer (only roles for V1)
  */
 
 export const AUTH_CONFIG = {
@@ -12,14 +12,19 @@ export const AUTH_CONFIG = {
   JWT_EXPIRY_SECONDS: 3600, // 1 hour access token
   REFRESH_TOKEN_EXPIRY_SECONDS: 604800, // 7 days refresh token
 
-  // User Roles (HR-only in V1)
+  // User Roles (V1)
   ROLES: {
-    HR_ADMIN: 'HR_ADMIN',
+    CompanyOwner: 'CompanyOwner',
+    HROfficer: 'HROfficer',
   } as const,
 
-  // Role Permissions (HR_ADMIN has full access to leave management system)
+  // Role Permissions
   ROLE_PERMISSIONS: {
-    HR_ADMIN: {
+    CompanyOwner: {
+      manage_companies: true,
+      manage_company_settings: true,
+      manage_users: true,
+      manage_role_assignments: true,
       manage_employees: true,
       manage_leaves: true,
       manage_leave_types: true,
@@ -27,6 +32,19 @@ export const AUTH_CONFIG = {
       manage_attendance: true,
       manage_user_access: true,
       system_configuration: true,
+    },
+    HROfficer: {
+      manage_companies: false,
+      manage_company_settings: false,
+      manage_users: true,
+      manage_role_assignments: false,
+      manage_employees: true,
+      manage_leaves: true,
+      manage_leave_types: true,
+      view_attendance: true,
+      manage_attendance: true,
+      manage_user_access: true,
+      system_configuration: false,
     },
   } as const,
 
