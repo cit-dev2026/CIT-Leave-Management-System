@@ -10,7 +10,7 @@
 export const AUTH_CONFIG = {
   // JWT Token Configuration
   JWT_EXPIRY_SECONDS: 3600, // 1 hour access token
-  REFRESH_TOKEN_EXPIRY_SECONDS: 604800, // 7 days refresh token
+  REFRESH_TOKEN_EXPIRY_SECONDS: 604804, // 7 days refresh token
 
   // User Roles (V1)
   ROLES: {
@@ -33,6 +33,7 @@ export const AUTH_CONFIG = {
       manage_user_access: true,
       system_configuration: true,
     },
+
     HROfficer: {
       manage_companies: false,
       manage_company_settings: false,
@@ -61,9 +62,9 @@ export const AUTH_CONFIG = {
     CALLBACK_URL_DEV: 'http://localhost:5173/auth/callback',
     LOGOUT_URL_DEV: 'http://localhost:5173/login',
 
-    // Production (set in environment variables)
-    CALLBACK_URL_PROD: process.env.VITE_AUTH_CALLBACK_URL || '',
-    LOGOUT_URL_PROD: process.env.VITE_AUTH_LOGOUT_URL || '',
+    // Production
+    CALLBACK_URL_PROD: import.meta.env.VITE_AUTH_CALLBACK_URL || '',
+    LOGOUT_URL_PROD: import.meta.env.VITE_AUTH_LOGOUT_URL || '',
   } as const,
 
   // Auth Error Messages
@@ -77,6 +78,8 @@ export const AUTH_CONFIG = {
     UNAUTHORIZED: 'You do not have permission to access this resource',
     SERVICE_ERROR: 'An error occurred. Please try again later',
   } as const,
+
 } as const
 
-export type UserRole = typeof AUTH_CONFIG.ROLES[keyof typeof AUTH_CONFIG.ROLES]
+export type UserRole =
+  typeof AUTH_CONFIG.ROLES[keyof typeof AUTH_CONFIG.ROLES]
